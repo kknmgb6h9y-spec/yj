@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>全球地理层级导航 - 从地球到街区</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* 主容器 */
+        .global-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(1px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3), 0 2px 10px 0 rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* 头部装饰 */
+        .hero {
+            background: linear-gradient(135deg, #1a2a3a, #0f2b3d);
+            padding: 2rem 2rem 1.5rem;
+            color: white;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            letter-spacing: -0.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero h1 span {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 60px;
+            padding: 0.2rem 1rem;
+            font-size: 1rem;
+            font-weight: normal;
+        }
+
+        .hero p {
+            margin-top: 0.7rem;
+            opacity: 0.85;
+            font-weight: 400;
+            font-size: 0.95rem;
+        }
+
+        /* 面包屑导航 */
+        .breadcrumb-area {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .breadcrumb {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 6px;
+            font-size: 1rem;
+        }
+
+        .breadcrumb-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0f2f8;
+            padding: 6px 14px;
+            border-radius: 40px;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-weight: 500;
+            color: #1f3b4c;
+            text-decoration: none;
+            border: 1px solid #e2e8f0;
+        }
+
+        .breadcrumb-item:hover {
+            background: #e2e8f2;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            color: #0f2b3d;
+        }
+
+        .breadcrumb-sep {
+            color: #6c86a3;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .breadcrumb-home {
+            background: #e9ecf3;
+            font-weight: 600;
+        }
+
+        /* 控制栏 */
+        .control-bar {
+            padding: 1rem 2rem 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: #ffffffcc;
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c3e50;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            transform: translateX(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-reset {
+            background: #1f3b4c;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reset:hover {
+            background: #0e2a38;
+            transform: scale(0.97);
+        }
+
+        /* 当前层级卡片区 */
+        .current-level {
+            padding: 1.5rem 2rem;
+            background: #ffffffdd;
+            border-top: 1px solid #eef2f9;
+        }
+
+        .level-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4b6a8b;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .level-title i {
+            font-size: 1.2rem;
+        }
+
+        .sub-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .geo-link {
+            background: white;
+            border-radius: 28px;
+            padding: 12px 16px;
+            text-align: center;
+            font-weight: 500;
+            color: #1e293b;
+            border: 1px solid #e2edf7;
+            transition: all 0.2s;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .geo-link:hover {
+            background: #eef3fc;
+            border-color: #b9d0e7;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 18px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 叶子节点详情区 */
+        .leaf-detail {
+            background: linear-gradient(120deg, #fef9e6, #fff5e6);
+            border-radius: 2rem;
+            margin: 1rem 2rem 2rem;
+            padding: 1.8rem;
+            text-align: center;
+            border: 1px solid #ffecb3;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .leaf-icon {
+            font-size: 3rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .leaf-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #a1582c;
+            margin-bottom: 0.5rem;
+        }
+
+        .leaf-sub {
+            color: #6b4c3b;
+            font-size: 0.95rem;
+            border-top: 1px dashed #ffd9a5;
+            padding-top: 1rem;
+            margin-top: 0.8rem;
+        }
+
+        /* 全球趣味卡片 */
+        .global-footer {
+            background: #eef3fc;
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #3c5e7e;
+            border-top: 1px solid #dce5f0;
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+
+        .global-footer span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+            .sub-items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            .breadcrumb-item {
+                padding: 4px 12px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="global-container">
+    <div class="hero">
+        <h1>
+            🌍 全球地理层级导航
+            <span>逐级下钻 · 世界在指尖</span>
+        </h1>
+        <p>从东半球到福田区，从西半球到好莱坞 — 探索每一寸土地的地理脉络</p>
+    </div>
+
+    <div class="breadcrumb-area">
+        <div class="breadcrumb" id="breadcrumbContainer">
+            <!-- 动态面包屑 -->
+        </div>
+    </div>
+
+    <div class="control-bar">
+        <button class="btn-back" id="backBtn">← 返回上一级</button>
+        <button class="btn-reset" id="resetBtn">🏠 重置 / 回到地球</button>
+    </div>
+
+    <div class="current-level" id="currentLevelContainer">
+        <div class="level-title">
+            📍 当前层级 · 可选下级
+        </div>
+        <div id="subItemsList" class="sub-items-grid">
+            <!-- 动态加载子级链接 -->
+        </div>
+    </div>
+
+    <div id="leafDetailContainer" class="leaf-detail" style="display: none;">
+        <!-- 叶子节点展示最终位置详情 -->
+    </div>
+
+    <div class="global-footer">
+        <span>🌏 东半球·东亚·中国·广东·深圳·福田区</span>
+        <span>🌎 西半球·北美·美国·加州·洛杉矶·好莱坞</span>
+        <span>🌍 欧洲·英国·伦敦·威斯敏斯特</span>
+        <span>🌏 非洲·肯尼亚·内罗毕</span>
+    </div>
+</div>
+
+<script>
+    // ======================= 全球地理层级数据 (树状结构) =======================
+    // 设计思路:  根节点(地球) -> 半球/大洲分区 -> 地理文化区 -> 国家 -> 一级政区 -> 城市 -> 区县/街区
+    // 完整展现“东半球 -> 东亚 -> 中国 -> 广东省 -> 深圳市 -> 福田区”及其它全球示例
+
+    // 辅助建节点
+    function createNode(name, children = null) {
+        return { name, children: children ? children : [] };
+    }
+
+    // ----- 构建东半球分支 -----
+    // 1. 福田区最终叶子
+    const futian = createNode("福田区");
+    const nanshan = createNode("南山区");
+    const baoan = createNode("宝安区");
+    const luohu = createNode("罗湖区");
+    const shenzhenChildren = [futian, nanshan, baoan, luohu];
+    const shenzhen = createNode("深圳市", shenzhenChildren);
+
+    const guangzhou = createNode("广州市", [createNode("天河区"), createNode("越秀区"), createNode("海珠区")]);
+    const foshan = createNode("佛山市", [createNode("禅城区"), createNode("南海区")]);
+    const guangdong = createNode("广东省", [shenzhen, guangzhou, foshan]);
+
+    const beijing = createNode("北京市", [createNode("朝阳区"), createNode("海淀区"), createNode("东城区")]);
+    const shanghai = createNode("上海市", [createNode("浦东新区"), createNode("黄浦区")]);
+    const china = createNode("中国", [guangdong, beijing, shanghai]);
+
+    // 日本示例 (东亚分支)
+    const chiyoda = createNode("千代田区");
+    const shinjuku = createNode("新宿区");
+    const tokyo = createNode("东京都", [chiyoda, shinjuku]);
+    const japan = createNode("日本", [tokyo, createNode("大阪府", [createNode("北区")])]);
+    const korea = createNode("韩国", [createNode("首尔特别市", [createNode("江南区")])]);
+
+    const eastAsia = createNode("东亚", [china, japan, korea]);
+
+    // 东南亚分支(全球性展示)
+    const singapore = createNode("新加坡", [createNode("中区社区")]);
+    const thailand = createNode("泰国", [createNode("曼谷都会区", [createNode("素坤逸区")])]);
+    const southEastAsia = createNode("东南亚", [singapore, thailand]);
+
+    // 欧洲分支 (完整层级: 东半球 -> 欧洲 -> 西欧/英国 -> 英格兰 -> 伦敦 -> 威斯敏斯特区)
+    const westminster = createNode("威斯敏斯特区");
+    const london = createNode("伦敦", [westminster, createNode("肯辛顿区")]);
+    const england = createNode("英格兰", [london]);
+    const uk = createNode("英国", [england]);
+    const westernEurope = createNode("西欧", [uk, createNode("法国", [createNode("法兰西岛", [createNode("巴黎", [createNode("第四区")])])])]);
+    const europe = createNode("欧洲", [westernEurope, createNode("南欧", [createNode("意大利", [createNode("拉齐奥", [createNode("罗马", [createNode("历史中心区")])])])])]);
+
+    // 非洲分支（东非肯尼亚内罗毕中央商务区）
+    const nairobiCBD = createNode("中央商务区");
+    const nairobi = createNode("内罗毕", [nairobiCBD]);
+    const kenya = createNode("肯尼亚", [nairobi]);
+    const eastAfrica = createNode("东非", [kenya]);
+    const africa = createNode("非洲", [eastAfrica, createNode("北非", [createNode("埃及", [createNode("开罗", [createNode("解放广场区")])])])]);
+
+    // 东半球整合所有区域
+    const eastHemisphere = createNode("东半球", [eastAsia, southEastAsia, europe, africa]);
+
+    // ----- 构建西半球分支 (北美+拉丁美洲)-----
+    // 好莱坞 (叶子)
+    const hollywood = createNode("好莱坞");
+    const downtownLA = createNode("洛杉矶市中心");
+    const losAngeles = createNode("洛杉矶", [hollywood, downtownLA]);
+    const california = createNode("加利福尼亚州", [losAngeles, createNode("旧金山", [createNode("渔人码头区")])]);
+    const usa = createNode("美国", [california, createNode("德克萨斯州", [createNode("休斯顿", [createNode("能源走廊")])]), createNode("纽约州", [createNode("曼哈顿", [createNode("时代广场区")])])]);
+    const northAmerica = createNode("北美", [usa, createNode("加拿大", [createNode("安大略省", [createNode("多伦多", [createNode("唐人街区")])])])]);
+
+    // 拉丁美洲: 巴西圣保罗保利斯塔区
+    const paulista = createNode("保利斯塔区");
+    const saoPauloCity = createNode("圣保罗市", [paulista]);
+    const saoPauloState = createNode("圣保罗州", [saoPauloCity]);
+    const brazil = createNode("巴西", [saoPauloState]);
+    const latinAmerica = createNode("拉丁美洲", [brazil, createNode("阿根廷", [createNode("布宜诺斯艾利斯", [createNode("圣特尔莫区")])])]);
+
+    const westHemisphere = createNode("西半球", [northAmerica, latinAmerica]);
+
+    // ----- 根节点：地球 -----
+    const rootWorld = createNode("🌍 地球", [eastHemisphere, westHemisphere]);
+
+    // ======================= 核心交互逻辑 =======================
+    let currentNode = rootWorld;          // 当前选中的节点
+    let pathNodes = [rootWorld];         // 从根到当前节点的完整路径
+
+    // DOM 元素
+    const breadcrumbContainer = document.getElementById('breadcrumbContainer');
+    const subItemsList = document.getElementById('subItemsList');
+    const leafDetailContainer = document.getElementById('leafDetailContainer');
+    const currentLevelContainer = document.getElementById('currentLevelContainer');
+    const backBtn = document.getElementById('backBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // 辅助函数: 更新整个UI (面包屑, 子级列表, 叶子区域, 按钮状态)
+    function updateUI() {
+        renderBreadcrumb();
+        // 判断当前节点是否为叶子 (无 children 或者 children 长度为0)
+        const hasChildren = currentNode.children && currentNode.children.length > 0;
+        
+        if (!hasChildren) {
+            // 显示叶子详情界面，隐藏子级网格区域
+            currentLevelContainer.style.display = 'none';
+            renderLeafDetail(currentNode);
+            leafDetailContainer.style.display = 'block';
+        } else {
+            // 显示可选子级列表
+            currentLevelContainer.style.display = 'block';
+            leafDetailContainer.style.display = 'none';
+            renderSubItems(currentNode.children);
+        }
+        // 更新返回按钮可用性
+        if (pathNodes.length <= 1) {
+            backBtn.disabled = true;
+            backBtn.style.opacity = '0.5';
+            backBtn.style.cursor = 'not-allowed';
+        } else {
+            backBtn.disabled = false;
+            backBtn.style.opacity = '1';
+            backBtn.style.cursor = 'pointer';
+        }
+    }
+
+    // 渲染面包屑 (支持点击跳转至任意层级)
+    function renderBreadcrumb() {
+        breadcrumbContainer.innerHTML = '';
+        pathNodes.forEach((node, idx) => {
+            const item = document.createElement('div');
+            item.className = 'breadcrumb-item';
+            if (idx === 0) item.classList.add('breadcrumb-home');
+            // 显示节点名称，根节点显示🌍地球
+            let displayName = node.name;
+            if (idx === 0 && node.name === '🌍 地球') displayName = '🌍 全球';
+            item.innerHTML = displayName;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 跳转到该层级，路径截取至 idx
+                if (idx === pathNodes.length - 1) return; // 已经是当前，无需刷新
+                goToNodeByIndex(idx);
+            });
+            breadcrumbContainer.appendChild(item);
+            // 非最后一项添加分隔符
+            if (idx !== pathNodes.length - 1) {
+                const sep = document.createElement('span');
+                sep.className = 'breadcrumb-sep';
+                sep.innerHTML = '›';
+                breadcrumbContainer.appendChild(sep);
+            }
+        });
+    }
+
+    // 通过索引跳转到历史层级
+    function goToNodeByIndex(idx) {
+        if (idx < 0 || idx >= pathNodes.length) return;
+        const targetNode = pathNodes[idx];
+        if (!targetNode) return;
+        currentNode = targetNode;
+        pathNodes = pathNodes.slice(0, idx + 1);
+        updateUI();
+    }
+
+    // 渲染子级卡片 (逐级链接，点击进入更深一级)
+    function renderSubItems(childrenList) {
+        subItemsList.innerHTML = '';
+        if (!childrenList || childrenList.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.textContent = '✨ 这里暂时没有更多下级区域 ✨';
+            emptyMsg.style.gridColumn = '1/-1';
+            emptyMsg.style.textAlign = 'center';
+            emptyMsg.style.padding = '2rem';
+            emptyMsg.style.color = '#6b7280';
+            subItemsList.appendChild(emptyMsg);
+            return;
+        }
+        childrenList.forEach(child => {
+            const linkCard = document.createElement('div');
+            linkCard.className = 'geo-link';
+            // 显示优雅的emoji辅助
+            let prefixIcon = '📍';
+            if (child.name === '东半球') prefixIcon = '🌏';
+            else if (child.name === '西半球') prefixIcon = '🌎';
+            else if (child.name === '东亚') prefixIcon = '🌸';
+            else if (child.name === '欧洲') prefixIcon = '🏰';
+            else if (child.name === '北美') prefixIcon = '🗽';
+            else if (child.name === '拉丁美洲') prefixIcon = '💃';
+            else if (child.name === '美国') prefixIcon = '🇺🇸';
+            else if (child.name === '中国') prefixIcon = '🇨🇳';
+            else if (child.name === '广东省') prefixIcon = '🏞️';
+            else if (child.name === '深圳市') prefixIcon = '🏙️';
+            else if (child.name === '福田区') prefixIcon = '🏢';
+            else prefixIcon = '🔗';
+            linkCard.innerHTML = `${prefixIcon} ${child.name}`;
+            linkCard.addEventListener('click', () => {
+                // 向下钻取
+                currentNode = child;
+                pathNodes.push(child);
+                updateUI();
+            });
+            subItemsList.appendChild(linkCard);
+        });
+    }
+
+    // 叶子节点展示精美详情 (最终地点)
+    function renderLeafDetail(leafNode) {
+        leafDetailContainer.innerHTML = '';
+        // 构造完整路径字符串 (可选增强)
+        let fullPathStr = pathNodes.map(n => n.name === '🌍 地球' ? '全球' : n.name).join(' › ');
+        
+        const iconSpan = document.createElement('div');
+        iconSpan.className = 'leaf-icon';
+        // 趣味图标
+        let leafEmoji = '📍';
+        if (leafNode.name === '福田区') leafEmoji = '🏢🌆';
+        else if (leafNode.name === '好莱坞') leafEmoji = '🎬🌟';
+        else if (leafNode.name === '威斯敏斯特区') leafEmoji = '🏛️👑';
+        else if (leafNode.name === '千代田区') leafEmoji = '🏯🌸';
+        else if (leafNode.name === '中央商务区') leafEmoji = '🏙️🌍';
+        else if (leafNode.name === '保利斯塔区') leafEmoji = '🕺🎉';
+        else leafEmoji = '🗺️✨';
+        iconSpan.textContent = leafEmoji;
+        
+        const titleSpan = document.createElement('div');
+        titleSpan.className = 'leaf-title';
+        titleSpan.textContent = leafNode.name;
+        
+        const descSpan = document.createElement('div');
+        descSpan.className = 'leaf-sub';
+        descSpan.innerHTML = `📍 完整地理路径：${fullPathStr}<br>✨ 您已抵达全球最精细的区位之一，可点击上方面包屑跳转任何层级，继续探索世界！ ✨`;
+        
+        const exploreBtn = document.createElement('button');
+        exploreBtn.textContent = '🔍 探索同级其他区域';
+        exploreBtn.style.marginTop = '20px';
+        exploreBtn.style.padding = '10px 20px';
+        exploreBtn.style.borderRadius = '40px';
+        exploreBtn.style.border = 'none';
+        exploreBtn.style.backgroundColor = '#f3cba5';
+        exploreBtn.style.fontWeight = 'bold';
+        exploreBtn.style.cursor = 'pointer';
+        exploreBtn.style.color = '#4a2e1e';
+        exploreBtn.addEventListener('click', () => {
+            // 跳回上一级，便于查看同级区域
+            if (pathNodes.length >= 2) {
+                goToNodeByIndex(pathNodes.length - 2);
+            } else {
+                resetToRoot();
+            }
+        });
+        
+        leafDetailContainer.appendChild(iconSpan);
+        leafDetailContainer.appendChild(titleSpan);
+        leafDetailContainer.appendChild(descSpan);
+        leafDetailContainer.appendChild(exploreBtn);
+    }
+
+    // 返回上一级
+    function goBack() {
+        if (pathNodes.length <= 1) return;
+        const parentPath = pathNodes.slice(0, -1);
+        const parentNode = parentPath[parentPath.length - 1];
+        if (parentNode) {
+            currentNode = parentNode;
+            pathNodes = parentPath;
+            updateUI();
+        }
+    }
+
+    // 重置到根节点（地球）
+    function resetToRoot() {
+        currentNode = rootWorld;
+        pathNodes = [rootWorld];
+        updateUI();
+    }
+
+    // 附赠：保证首次加载展示世界顶级选项（东半球/西半球及其他根下子级）
+    // 额外增加数据完整性保护：东半球节点下确保有东亚,欧洲,非洲,东南亚；西半球有北美拉丁美洲
+    // 并且路径“东半球->东亚->中国->广东省->深圳市->福田区”完美可达
+    // 为了强调全球性质，我们在初始化时还可在控制台打印示例路径
+    function warmUpDemo() {
+        console.log("🌐 全球地理层级系统已启动 | 样例路径：东半球 → 东亚 → 中国 → 广东省 → 深圳市 → 福田区");
+        console.log("🌎 西半球样例：西半球 → 北美 → 美国 → 加利福尼亚州 → 洛杉矶 → 好莱坞");
+        console.log("🏰 欧洲样例：东半球 → 欧洲 → 西欧 → 英国 → 英格兰 → 伦敦 → 威斯敏斯特区");
+    }
+
+    // 事件绑定
+    backBtn.addEventListener('click', goBack);
+    resetBtn.addEventListener('click', resetToRoot);
+    
+    // 启动一切
+    function init() {
+        warmUpDemo();
+        updateUI();
+    }
+    
+    init();
+</script>
+</body>
+</html>
